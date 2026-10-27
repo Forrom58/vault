@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' blob: data:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Vault">
+<title>Vault — Consulta password</title>
+<style>
+  /* Alto contrasto: sfondo nero, testo bianco, accento giallo. Nessuna sfumatura, trasparenza o ombra. */
+  :root{--bg:#000000;--text:#ffffff;--accent:#ffff00;--line:#ffffff;--ok:#66ff66;--err:#ff8080;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,'Courier New',monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg);font-size:20px;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:1rem;line-height:1.5;min-height:100vh;
+    padding:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(48px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px));}
+  .wrap{max-width:720px;margin:0 auto;}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+  h1{font-family:var(--mono);font-size:1.3rem;font-weight:700;margin:0;color:var(--text);}
+  h1 span{color:var(--accent);}
+  .pill{font-family:var(--mono);font-size:1rem;font-weight:700;padding:6px 14px;border-radius:6px;border:3px solid var(--err);color:var(--err);background:var(--bg);white-space:nowrap;}
+  .pill.on{border-color:var(--ok);color:var(--ok);}
+  .hidden{display:none !important;}
+  a.home{display:inline-flex;align-items:center;min-height:48px;padding:0 16px;border:3px solid var(--line);border-radius:8px;color:var(--text);font-weight:700;text-decoration:none;font-family:var(--sans);}
+  a.home:focus-visible{outline:4px solid var(--accent);outline-offset:2px;}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
+  .panel{background:var(--bg);border:3px solid var(--line);border-radius:8px;padding:18px;margin-bottom:16px;}
+  .lbl{display:block;font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:8px;}
+  input[type=password],input[type=text],input[type=search]{
+    -webkit-appearance:none;appearance:none;width:100%;background:var(--bg);border:3px solid var(--line);color:var(--text);
+    padding:12px 14px;min-height:56px;border-radius:8px;font-family:var(--mono);font-size:1rem;}
+  input::placeholder{color:#d9d9d9;opacity:1;}
+  input:focus{outline:4px solid var(--accent);outline-offset:2px;}
+  button{-webkit-appearance:none;appearance:none;font-family:var(--sans);font-size:1rem;font-weight:700;min-height:56px;padding:0 18px;border-radius:8px;
+    border:3px solid var(--line);background:var(--bg);color:var(--text);cursor:pointer;}
+  button:focus-visible{outline:4px solid var(--accent);outline-offset:2px;}
+  button:disabled{opacity:1;color:#b3b3b3;border-style:dashed;border-color:#b3b3b3;cursor:not-allowed;}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#000000;}
+  button.primary:disabled{background:var(--bg);color:#b3b3b3;border-color:#b3b3b3;}
+  button.danger{border-color:var(--err);color:var(--err);background:var(--bg);}
+  button.big{width:100%;min-height:64px;font-size:1.1rem;}
+  button.sm{min-height:48px;padding:0 16px;font-size:.95rem;}
+  .pwrow{display:flex;gap:10px;flex-wrap:wrap;}
+  .pwrow input{flex:1 1 200px;min-width:0;}
+  .actions{display:flex;gap:10px;margin-top:14px;}
+  .actions button{flex:1;}
+  .msg{display:none;font-family:var(--mono);font-size:1rem;line-height:1.5;padding:12px 14px;border-radius:8px;margin-top:14px;background:var(--bg);}
+  .msg.show{display:block;}
+  .msg.err{color:var(--err);border:3px solid var(--err);}
+  .msg.ok{color:var(--ok);border:3px solid var(--ok);}
+  .count{font-size:1rem;font-weight:700;color:var(--accent);margin:12px 2px 14px;}
+  .card{background:var(--bg);border:3px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:16px;}
+  .card h3{margin:0 0 10px;font-size:1.25rem;font-weight:700;color:var(--accent);word-break:break-word;}
+  .card h3 a.site-link{color:var(--accent);text-decoration:underline;text-underline-offset:3px;}
+  .card h3 a.site-link:focus-visible{outline:4px solid var(--accent);outline-offset:2px;}
+  .f{padding:12px 0;border-top:2px solid var(--line);}
+  .f .k{font-size:.9rem;font-weight:700;color:var(--accent);margin-bottom:6px;}
+  .f .v{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .f .t{font-family:var(--mono);font-size:1.1rem;color:var(--text);word-break:break-all;min-width:0;flex:1 1 100%;}
+  .f .t.mask{letter-spacing:3px;}
+  .f .b{display:flex;gap:10px;flex-shrink:0;flex-wrap:wrap;}
+  .f .n{font-size:1.05rem;color:var(--text);white-space:pre-wrap;word-break:break-word;}
+  .empty{color:var(--text);text-align:center;padding:30px 0;font-size:1.05rem;border:3px dashed var(--line);border-radius:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <a class="home" href="./">← Home</a>
+    <h1><span>▣</span> Consulta</h1>
+    <span id="pill" class="pill" role="status" aria-live="polite">bloccato</span>
+  </header>
+
+  <div class="panel" id="startPanel">
+    <button class="primary big" id="btnLoad" type="button">Carica vault (PNG)</button>
+    <input type="file" id="fileIn" accept="image/png" class="hidden">
+    <div class="msg" role="status" aria-live="polite" id="startMsg"></div>
+  </div>
+
+  <div class="panel hidden" id="pwPanel">
+    <label class="lbl" for="pw">Master password</label>
+    <div class="pwrow">
+      <input type="password" id="pw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
+      <button type="button" id="btnEye" aria-pressed="false">mostra</button>
+    </div>
+    <div class="actions">
+      <button type="button" id="btnCancel">Annulla</button>
+      <button type="button" class="primary" id="btnUnlock">Sblocca</button>
+    </div>
+    <div class="msg" role="status" aria-live="polite" id="pwMsg"></div>
+  </div>
+
+  <div class="hidden" id="vaultPanel">
+    <div class="pwrow">
+      <input type="search" id="q" aria-label="Cerca per sito, utente o note" placeholder="Cerca per sito, utente o note" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button type="button" class="danger" id="btnLock">Blocca</button>
+    </div>
+    <div class="count" id="count" tabindex="-1" aria-live="polite"></div>
+    <div id="list"></div>
+  </div>
+</div>
+<div id="srLive" class="sr-only" aria-live="polite"></div>
+
+<script src="vault-crypto.js"></script>
+<script src="viewer.js"></script>
+<script src="sw-register.js"></script>
+</body>
+</html>
