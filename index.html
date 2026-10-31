@@ -23,8 +23,14 @@
   body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.4;min-height:100vh;
     padding:calc(20px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px));}
   .wrap{max-width:520px;margin:0 auto;}
-  .title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:28px;}
-  h1{font-size:1.5rem;margin:0;}
+  .title{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:28px;}
+  h1{font-size:1.5rem;margin:0;display:flex;align-items:flex-end;gap:10px;line-height:1;}
+  h1 svg{width:1.6rem;height:1.6rem;flex-shrink:0;}
+  .guide{margin-top:32px;color:var(--accent);font-size:.95rem;line-height:1.5;}
+  .guide h2{font-size:1rem;margin:0 0 10px;color:var(--accent);}
+  .guide ol{margin:0;padding-left:1.4em;}
+  .guide li{margin-bottom:10px;}
+  .guide b{color:var(--text);font-weight:600;}
   .ver{font-size:.8rem;color:var(--accent);white-space:nowrap;}
   a.big{display:block;text-align:center;text-decoration:none;font-size:1.15rem;font-weight:700;
     border:2px solid var(--accent);border-radius:10px;padding:16px;margin-bottom:16px;color:var(--text);background:var(--btn);}
@@ -33,9 +39,21 @@
 </head>
 <body>
 <main class="wrap">
-  <div class="title"><h1>Vault</h1><span class="ver"></span></div>
+  <div class="title"><h1><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3" fill="none" stroke="#7f96ad" stroke-width="2.2"/><rect x="4" y="10" width="16" height="12" rx="2" fill="#7f96ad"/><circle cx="12" cy="15" r="1.7" fill="#1b2a3a"/><rect x="11.1" y="15.5" width="1.8" height="3.6" fill="#1b2a3a"/></svg>Vault</h1><span class="ver"></span></div>
   <a class="big" href="viewer.html">Consulta</a>
   <a class="big" href="editor.html">Registra</a>
+
+  <section class="guide" aria-labelledby="guideTitle">
+    <h2 id="guideTitle">Come si usa</h2>
+    <ol>
+      <li><b>Prima volta:</b> tocca Registra → Nuovo vault → Genera immagine casuale. Scegli una master password che non dimenticherai e tocca Crea vault.</li>
+      <li>Aggiungi le password con <b>+ Nuova voce</b> → Salva voce.</li>
+      <li>Tocca <b>Esporta vault (PNG)</b> e salva l'immagine nel telefono.</li>
+      <li><b>Per leggere:</b> tocca Consulta → Carica vault (PNG) → scrivi la master password.</li>
+      <li><b>Per modificare:</b> Registra → Carica vault (PNG), fai le modifiche ed esporta di nuovo. Usa sempre il PNG più recente.</li>
+      <li>Tieni una copia del PNG. Non mandarlo con WhatsApp: lo rovina.</li>
+    </ol>
+  </section>
 </main>
 <script src="sw-register.js"></script>
 </body>
