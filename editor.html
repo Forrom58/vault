@@ -49,7 +49,7 @@
   header.top h1 .dot{color:var(--accent);}
   .status-pill{font-family:var(--mono);font-size:1rem;font-weight:700;padding:6px 14px;border-radius:6px;border:3px solid var(--err);color:var(--err);background:var(--bg);}
   .status-pill.unlocked{border-color:var(--ok);color:var(--ok);}
-  .status-pill.locked{border-color:var(--err);color:var(--err);}
+  .status-pill.locked{border-color:#ff3333;color:#ff3333;}
 
   .subhead{color:var(--text);font-size:1rem;margin:0 0 20px;line-height:1.5;}
   .subhead code{font-family:var(--mono);border:2px solid var(--line);padding:0 6px;border-radius:4px;font-size:.95rem;}
@@ -143,8 +143,7 @@
   </p>
 
   <!-- SETUP PANEL -->
-  <div class="panel" id="setupPanel">
-    <h2>Avvio</h2>
+  <div id="setupPanel" style="margin-bottom:16px;">
     <div class="row">
       <button class="primary" id="btnNewVault">Nuovo vault</button>
       <button id="btnImportVault">Carica vault (PNG)</button>

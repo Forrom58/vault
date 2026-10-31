@@ -28,7 +28,7 @@
   header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
   h1{font-family:var(--mono);font-size:1.3rem;font-weight:700;margin:0;color:var(--text);}
   h1 span{color:var(--accent);}
-  .pill{font-family:var(--mono);font-size:1rem;font-weight:700;padding:6px 14px;border-radius:6px;border:3px solid var(--err);color:var(--err);background:var(--bg);white-space:nowrap;}
+  .pill{font-family:var(--mono);font-size:1rem;font-weight:700;padding:6px 14px;border-radius:6px;border:3px solid #ff3333;color:#ff3333;background:var(--bg);white-space:nowrap;}
   .pill.on{border-color:var(--ok);color:var(--ok);}
   .hidden{display:none !important;}
   a.home{display:inline-flex;align-items:center;min-height:48px;padding:0 16px;border:3px solid var(--line);border-radius:8px;color:var(--text);font-weight:700;text-decoration:none;font-family:var(--sans);}
@@ -82,7 +82,7 @@
     <span id="pill" class="pill" role="status" aria-live="polite">bloccato</span>
   </header>
 
-  <div class="panel" id="startPanel">
+  <div id="startPanel" style="margin-bottom:16px;">
     <button class="primary big" id="btnLoad" type="button">Carica vault (PNG)</button>
     <input type="file" id="fileIn" accept="image/png" class="hidden">
     <div class="msg" role="status" aria-live="polite" id="startMsg"></div>
