@@ -24,6 +24,9 @@
     padding:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(32px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px));}
   .wrap{max-width:720px;margin:0 auto;}
   h1{font-size:1.6rem;margin:8px 0 6px;}
+  .title{display:flex;align-items:baseline;gap:12px;}
+  .ver{font-family:var(--sans);font-size:.8rem;font-weight:400;color:var(--accent);white-space:nowrap;}
+  .title{justify-content:space-between;}
   h1 span{color:var(--accent);}
   p{margin:0 0 24px;}
   a.big{display:block;text-decoration:none;border:3px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:16px;color:var(--text);}
@@ -35,7 +38,7 @@
 </head>
 <body>
 <main class="wrap">
-  <h1><span>▣</span> Vault</h1>
+  <div class="title"><h1><span>▣</span> Vault</h1><span class="ver"></span></div>
   <p>Le tue password, cifrate dentro un'immagine PNG che tieni tu. Niente viene inviato in rete.</p>
   <a class="big primary" href="viewer.html"><strong>Consulta password</strong>Apri un vault PNG e leggi le password</a>
   <a class="big" href="editor.html"><strong>Registra password</strong>Crea un vault, aggiungi o modifica voci, esporta il PNG</a>
