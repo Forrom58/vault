@@ -1,7 +1,7 @@
 // Service worker di Vault: tiene in cache i file dell'app per il funzionamento offline.
 // A ogni nuova versione dei file, aumentare il numero di VERSION: i telefoni scaricheranno
 // i file nuovi e cancelleranno quelli vecchi.
-const VERSION = 'vault-v2';
+const VERSION = 'vault-v3';
 const FILES = [
   './', 'index.html', 'editor.html', 'editor.js', 'viewer.html', 'viewer.js',
   'vault-crypto.js', 'sw-register.js', 'manifest.json',

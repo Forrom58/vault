@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#24384c">
+<meta name="theme-color" content="#1b2a3a">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' blob: data:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.json">
@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Vault">
 <title>Vault — Consulta password</title>
 <style>
-  /* Contrasto elevato con i colori dell'icona: sfondo blu scuro, testo grigio-azzurro chiaro. Nessuna sfumatura, trasparenza o ombra. */
-  :root{--bg:#24384c;--text:#d8e2ec;--accent:#b8c7d6;--line:#b8c7d6;--ink:#1e2e40;--ok:#9ed9b0;--err:#f4a3a3;
+  /* Colori scuri e tenui dall'icona, senza superfici chiare che abbagliano. Nessuna sfumatura, trasparenza o ombra. */
+  :root{--bg:#1b2a3a;--text:#a3b2c2;--accent:#7f96ad;--line:#7f96ad;--btn:#2e4760;--ok:#86b896;--err:#c98a8a;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,'Courier New',monospace;
     --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -39,14 +39,14 @@
   input[type=password],input[type=text],input[type=search]{
     -webkit-appearance:none;appearance:none;width:100%;background:var(--bg);border:3px solid var(--line);color:var(--text);
     padding:10px 12px;min-height:48px;border-radius:8px;font-family:var(--mono);font-size:1rem;}
-  input::placeholder{color:#9fb0c2;opacity:1;}
+  input::placeholder{color:#7f96ad;opacity:1;}
   input:focus{outline:4px solid var(--accent);outline-offset:2px;}
   button{-webkit-appearance:none;appearance:none;font-family:var(--sans);font-size:1rem;font-weight:700;min-height:48px;padding:0 16px;border-radius:8px;
     border:3px solid var(--line);background:var(--bg);color:var(--text);cursor:pointer;}
   button:focus-visible{outline:4px solid var(--accent);outline-offset:2px;}
-  button:disabled{opacity:1;color:#8496aa;border-style:dashed;border-color:#8496aa;cursor:not-allowed;}
-  button.primary{background:var(--accent);border-color:var(--accent);color:var(--ink);}
-  button.primary:disabled{background:var(--bg);color:#8496aa;border-color:#8496aa;}
+  button:disabled{opacity:1;color:#5f7286;border-style:dashed;border-color:#5f7286;cursor:not-allowed;}
+  button.primary{background:var(--btn);border-color:var(--accent);color:var(--text);}
+  button.primary:disabled{background:var(--bg);color:#5f7286;border-color:#5f7286;}
   button.danger{border-color:var(--err);color:var(--err);background:var(--bg);}
   button.big{width:100%;min-height:52px;font-size:1.05rem;}
   button.sm{min-height:44px;padding:0 14px;font-size:.9rem;}
