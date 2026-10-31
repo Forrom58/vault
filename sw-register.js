@@ -1,6 +1,6 @@
 // ---------- Versione dell'app ----------
 // A ogni aggiornamento cambiare QUI il numero E la riga VERSION in sw.js (stesso numero).
-var APP_VERSION = '3.6';
+var APP_VERSION = '3.8';
 document.querySelectorAll('.ver').forEach(function(el){
   el.textContent = 'v' + APP_VERSION;
   el.setAttribute('aria-label', 'versione ' + APP_VERSION);
