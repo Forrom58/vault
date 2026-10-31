@@ -345,7 +345,7 @@
     const c = $('coverPreview');
     c.getContext('2d').clearRect(0,0,c.width,c.height);
     updatePwStrengthUI();
-    $('coverSize').focus();
+    $('coverSize').focus({ preventScroll: true }); // niente salto della pagina
   });
 
   $('btnCancelCreate').addEventListener('click', () => {
