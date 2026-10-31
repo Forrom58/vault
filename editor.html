@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#24384c">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' blob: data:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.json">
@@ -16,16 +16,18 @@
 <meta name="apple-mobile-web-app-title" content="Vault">
 <title>Vault — Registra password</title>
 <style>
-  /* Alto contrasto per ipovedenti: sfondo nero, testo bianco, accento giallo.
+  /* Contrasto elevato per ipovedenti con i colori dell'icona: sfondo blu scuro, testo grigio-azzurro chiaro.
      Nessuna sfumatura, trasparenza, ombra o transizione. Font grandi, bersagli di tocco >= 48px. */
   :root{
-    --bg:#000000;
-    --text:#ffffff;
-    --accent:#ffff00;
-    --line:#ffffff;
-    --ok:#66ff66;
-    --err:#ff8080;
-    --dim:#b3b3b3;
+    /* Palette dall'icona: blu scuro + grigio-azzurro */
+    --bg:#24384c;
+    --text:#d8e2ec;
+    --accent:#b8c7d6;
+    --line:#b8c7d6;
+    --ink:#1e2e40;
+    --ok:#9ed9b0;
+    --err:#f4a3a3;
+    --dim:#8496aa;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,'Courier New',monospace;
     --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   }
@@ -59,25 +61,25 @@
   label{font-size:1rem;font-weight:700;color:var(--accent);}
   input[type=text],input[type=password],input[type=number],input[type=search],textarea,select{
     -webkit-appearance:none;appearance:none;background:var(--bg);border:3px solid var(--line);color:var(--text);
-    padding:12px 14px;min-height:56px;border-radius:8px;font-family:var(--mono);font-size:1rem;width:100%;
+    padding:10px 12px;min-height:48px;border-radius:8px;font-family:var(--mono);font-size:1rem;width:100%;
   }
   select{background-image:none;}
-  input::placeholder,textarea::placeholder{color:#d9d9d9;opacity:1;}
+  input::placeholder,textarea::placeholder{color:#9fb0c2;opacity:1;}
   input:focus,textarea:focus,select:focus{outline:4px solid var(--accent);outline-offset:2px;}
   textarea{resize:vertical;min-height:96px;}
   input[type=checkbox]{width:28px;height:28px;min-height:0;accent-color:var(--accent);flex-shrink:0;margin:0;}
 
   button{
     -webkit-appearance:none;appearance:none;font-family:var(--sans);font-size:1rem;font-weight:700;
-    min-height:56px;padding:8px 18px;border-radius:8px;line-height:1.25;
+    min-height:48px;padding:6px 16px;border-radius:8px;line-height:1.25;
     border:3px solid var(--line);background:var(--bg);color:var(--text);cursor:pointer;
   }
   button:focus-visible{outline:4px solid var(--accent);outline-offset:2px;}
-  button.primary{background:var(--accent);border-color:var(--accent);color:#000000;}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--ink);}
   button.danger{border-color:var(--err);color:var(--err);background:var(--bg);}
   button.ghost{background:var(--bg);}
   button:disabled{color:var(--dim);border-style:dashed;border-color:var(--dim);cursor:not-allowed;}
-  button.small{min-height:48px;padding:6px 16px;font-size:.95rem;}
+  button.small{min-height:44px;padding:4px 14px;font-size:.9rem;}
 
   .msg{font-family:var(--mono);font-size:1rem;line-height:1.5;padding:12px 14px;border-radius:8px;margin-top:14px;display:none;background:var(--bg);}
   .msg.show{display:block;}
