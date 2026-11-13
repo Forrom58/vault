@@ -1049,6 +1049,86 @@
     showMsg(vaultMsg, msg, (added || duplicates) ? 'warn' : 'err');
   });
 
+  // ---------- importazione da SafeInCloud (.db) ----------
+  let sicFile = null, sicBusy = false;
+  function setSicBusy(v){
+    sicBusy = v;
+    $('btnConfirmSic').disabled = v;
+    $('btnCancelSic').disabled = v;
+  }
+  function closeSic(){
+    $('sicPw').value = '';
+    sicFile = null;
+    closeModal($('sicBg'));
+  }
+  $('btnImportSic').addEventListener('click', () => {
+    clearMsg(vaultMsg);
+    if (!vault){ showMsg(vaultMsg, 'Nessun vault attivo.', 'err'); return; }
+    $('fileImportSic').click();
+  });
+  $('fileImportSic').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file || !vault) return;
+    sicFile = file;
+    $('sicPw').value = '';
+    clearMsg($('sicMsg'));
+    openModal($('sicBg'), $('sicPw'));
+  });
+  $('btnCancelSic').addEventListener('click', () => { if (!sicBusy) closeSic(); });
+  $('sicPw').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); $('btnConfirmSic').click(); } });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && $('sicBg').classList.contains('show') && !sicBusy) closeSic();
+  });
+  $('btnConfirmSic').addEventListener('click', async () => {
+    if (sicBusy || !sicFile || !vault) return;
+    const msgEl = $('sicMsg');
+    const pw = $('sicPw').value;
+    if (!pw){ showMsg(msgEl, 'Scrivi la password di SafeInCloud.', 'err'); $('sicPw').focus(); return; }
+    setSicBusy(true);
+    showMsg(msgEl, 'Lettura del database in corso, attendere…', 'warn');
+    let res;
+    try{
+      res = await window.SafeInCloud.importDb(await sicFile.arrayBuffer(), pw);
+    }catch(err){
+      setSicBusy(false);
+      const m = err.message === 'PASSWORD' ? 'Password di SafeInCloud errata.'
+              : err.message === 'BROWSER' ? 'Questo browser è troppo vecchio per leggere il file: aggiorna Chrome.'
+              : 'File non riconosciuto: deve essere il database esportato da SafeInCloud (.db).';
+      showMsg(msgEl, m, 'err');
+      $('sicPw').focus();
+      return;
+    }
+    const keyOf = x => JSON.stringify([x.site, x.user, x.pass, x.notes, x.fields || []]);
+    const existing = new Set(vault.entries.map(keyOf));
+    let added = 0, duplicates = 0;
+    res.entries.forEach(en => {
+      const k = keyOf(en);
+      if (existing.has(k)){ duplicates++; return; }
+      existing.add(k);
+      const ne = { id: newEntryId(), site: en.site, user: en.user, pass: en.pass, notes: en.notes };
+      if (en.fields.length) ne.fields = en.fields;
+      vault.entries.push(ne);
+      added++;
+    });
+    setSicBusy(false);
+    closeSic();
+    if (added) setDirty(true);
+    renderEntries();
+    updateCapacityGauge();
+    let msg = 'Importate '+added+' voci da SafeInCloud';
+    if (duplicates) msg += ', '+duplicates+' ignorate perché già presenti';
+    if (res.skippedEmpty) msg += ', '+res.skippedEmpty+' schede vuote saltate';
+    if (res.attachments) msg += ', '+res.attachments+' allegati non importati';
+    msg += '.';
+    const cap = capacityBytes(getCanvasImageData(coverCanvas));
+    const used = new TextEncoder().encode(JSON.stringify(vault)).length + 28;
+    if (used > cap) msg += ' ATTENZIONE: l\'immagine è troppo piccola, tocca "Rigenera immagine" per crearne una più grande prima di esportare.';
+    else msg += ' Controlla le voci, poi esporta il vault (PNG).';
+    showMsg(vaultMsg, msg, added ? 'warn' : 'err');
+    $('vaultTitle').focus();
+  });
+
   // ---------- lock ----------
   $('btnLock').addEventListener('click', () => {
     if (dirty && !confirm('Ci sono modifiche NON esportate: bloccando andranno perse. Bloccare comunque?')) return;
