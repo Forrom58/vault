@@ -500,6 +500,7 @@
     }
   }
 
+  const openIds = new Set(); // schede aperte (di default tutte chiuse)
   function renderEntries(){
     entryBody.innerHTML = '';
     const filtered = vault.entries.filter(e => matchesSearch(e, searchTerm));
@@ -517,25 +518,49 @@
     entryCountEl.textContent = searchTerm
       ? filtered.length + ' di ' + vault.entries.length
       : String(vault.entries.length);
+    // Ordine alfabetico per titolo (senza distinguere maiuscole e accenti)
+    filtered.sort((a, b) => (a.site || '').localeCompare(b.site || '', 'it', { sensitivity: 'base', numeric: true }));
     filtered.forEach(entry => {
       const tr = document.createElement('tr');
       const nm = entry.site || 'voce senza nome';
+      const isOpen = openIds.has(entry.id);
+      if (!isOpen) tr.classList.add('closed');
 
+      // Titolo = pulsante che apre/chiude la scheda
       const tdSite = document.createElement('td');
-      tdSite.dataset.label = 'Sito / servizio';
+      tdSite.className = 'site-cell';
+      const tgl = document.createElement('button');
+      tgl.type = 'button';
+      tgl.className = 'entry-toggle';
+      tgl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow'; arrow.setAttribute('aria-hidden', 'true');
+      arrow.textContent = isOpen ? '▾' : '▸';
+      const tname = document.createElement('span');
+      tname.textContent = entry.site || '—';
+      tgl.appendChild(arrow); tgl.appendChild(tname);
+      tgl.addEventListener('click', () => {
+        const open = tr.classList.toggle('closed') === false;
+        if (open) openIds.add(entry.id); else openIds.delete(entry.id);
+        tgl.setAttribute('aria-expanded', open ? 'true' : 'false');
+        arrow.textContent = open ? '▾' : '▸';
+      });
+      tdSite.appendChild(tgl);
+      tr.appendChild(tdSite);
+
       const siteUrl = siteToUrl(entry.site);
       if (siteUrl){
+        const tdUrl = document.createElement('td');
+        tdUrl.dataset.label = 'Indirizzo';
         const link = document.createElement('a');
         link.href = siteUrl;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         link.className = 'site-link';
         link.textContent = entry.site;
-        tdSite.appendChild(link);
-      } else {
-        tdSite.textContent = entry.site || '—';
+        tdUrl.appendChild(link);
+        tr.appendChild(tdUrl);
       }
-      tr.appendChild(tdSite);
 
       const tdUser = document.createElement('td');
       tdUser.dataset.label = 'Utente';
@@ -619,11 +644,13 @@
         tr.appendChild(td);
       });
 
-      const tdNotes = document.createElement('td');
-      tdNotes.dataset.label = 'Note';
-      tdNotes.className = 'notes-cell';
-      tdNotes.textContent = entry.notes || '';
-      tr.appendChild(tdNotes);
+      if (entry.notes){ // "Note" solo se c'è una nota
+        const tdNotes = document.createElement('td');
+        tdNotes.dataset.label = 'Note';
+        tdNotes.className = 'notes-cell';
+        tdNotes.textContent = entry.notes;
+        tr.appendChild(tdNotes);
+      }
 
       const tdActions = document.createElement('td');
       const actionsDiv = document.createElement('div');
@@ -837,6 +864,7 @@
       const ne = { id: newEntryId(), site, user, pass, notes };
       if (fields.length) ne.fields = fields;
       vault.entries.push(ne);
+      openIds.add(ne.id); // la voce appena creata si vede aperta
     }
     closeModal(entryModalBg);
     setDirty(true);
@@ -1116,11 +1144,14 @@
     if (added) setDirty(true);
     renderEntries();
     updateCapacityGauge();
-    let msg = 'Importate '+added+' voci da SafeInCloud';
-    if (duplicates) msg += ', '+duplicates+' ignorate perché già presenti';
-    if (res.skippedEmpty) msg += ', '+res.skippedEmpty+' schede vuote saltate';
-    if (res.attachments) msg += ', '+res.attachments+' allegati non importati';
+    // Resoconto completo, per confrontarlo con SafeInCloud
+    let msg = 'Nel file '+res.total+' schede: importate '+added;
+    if (duplicates) msg += ', già presenti '+duplicates;
+    if (res.deleted) msg += ', eliminate in SafeInCloud '+res.deleted;
+    if (res.templates) msg += ', modelli '+res.templates;
+    if (res.skippedEmpty) msg += ', vuote '+res.skippedEmpty;
     msg += '.';
+    if (res.attachments) msg += ' Allegati non importati: '+res.attachments+'.';
     const cap = capacityBytes(getCanvasImageData(coverCanvas));
     const used = new TextEncoder().encode(JSON.stringify(vault)).length + 28;
     if (used > cap) msg += ' ATTENZIONE: l\'immagine è troppo piccola, tocca "Rigenera immagine" per crearne una più grande prima di esportare.';
@@ -1133,6 +1164,7 @@
   $('btnLock').addEventListener('click', () => {
     if (dirty && !confirm('Ci sono modifiche NON esportate: bloccando andranno perse. Bloccare comunque?')) return;
     dirty = false;
+    openIds.clear();
     vault = null;
     masterPassword = null;
     coverCanvas = null;

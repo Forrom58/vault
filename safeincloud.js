@@ -67,7 +67,7 @@
   const SECRET_TYPES = ['password', 'pin', 'one_time_password', 'secret'];
   const oneLine = s => String(s || '').replace(/\r\n|\r|\n/g, ' ').trim();
 
-  // Converte l'XML in voci di Vault: { entries, skippedEmpty, attachments }
+  // Converte l'XML in voci di Vault: { entries, skippedEmpty, attachments, total, templates, deleted }
   function parseXml(xmlText){
     const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
     if (doc.getElementsByTagName('parsererror').length || !doc.documentElement || doc.documentElement.nodeName !== 'database'){
@@ -77,10 +77,12 @@
     const labels = {};
     Array.from(root.children).forEach(el => { if (el.nodeName === 'label') labels[el.getAttribute('id')] = el.getAttribute('name') || ''; });
     const entries = [];
-    let skippedEmpty = 0, attachments = 0;
+    let skippedEmpty = 0, attachments = 0, total = 0, templates = 0, deleted = 0;
     Array.from(root.children).forEach(card => {
       if (card.nodeName !== 'card') return;
-      if (card.getAttribute('template') === 'true' || card.getAttribute('deleted') === 'true') return;
+      total++;
+      if (card.getAttribute('template') === 'true'){ templates++; return; }
+      if (card.getAttribute('deleted') === 'true'){ deleted++; return; }
       const kids = Array.from(card.children);
       const fieldEls = kids.filter(k => k.nodeName === 'field');
       const notesEl = kids.find(k => k.nodeName === 'notes');
@@ -108,7 +110,7 @@
         fields: extra
       });
     });
-    return { entries, skippedEmpty, attachments };
+    return { entries, skippedEmpty, attachments, total, templates, deleted };
   }
 
   async function importDb(arrayBuffer, password){

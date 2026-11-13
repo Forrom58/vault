@@ -107,6 +107,7 @@
     }catch(e){ return null; }
   }
 
+  var openKeys = {}; // schede aperte (di default tutte chiuse)
   function render(){
     var list = $('list');
     list.textContent = '';
@@ -119,20 +120,39 @@
       list.appendChild(d);
       return;
     }
+    // Ordine alfabetico per titolo (senza distinguere maiuscole e accenti)
+    shown.sort(function(a, b){ return String(a.site || '').localeCompare(String(b.site || ''), 'it', { sensitivity: 'base', numeric: true }); });
     shown.forEach(function(e){
       var card = document.createElement('div'); card.className = 'card';
       var nm = e.site || 'voce senza nome';
       var h = document.createElement('h3');
       var siteUrl = siteToUrl(e.site);
+      // Titolo = pulsante che apre/chiude la scheda (di default chiusa)
+      var key = String(e.id || e.site);
+      var isOpen = !!openKeys[key];
+      var tgl = document.createElement('button');
+      tgl.type = 'button'; tgl.className = 'entry-toggle';
+      tgl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      var arrow = document.createElement('span'); arrow.className = 'arrow'; arrow.setAttribute('aria-hidden', 'true');
+      arrow.textContent = isOpen ? '▾' : '▸';
+      var tname = document.createElement('span'); tname.textContent = e.site || '—';
+      tgl.appendChild(arrow); tgl.appendChild(tname);
+      h.appendChild(tgl);
+      card.appendChild(h);
+      if (!isOpen) card.classList.add('closed');
+      tgl.addEventListener('click', function(){
+        var open = card.classList.toggle('closed') === false;
+        if (open) openKeys[key] = true; else delete openKeys[key];
+        tgl.setAttribute('aria-expanded', open ? 'true' : 'false');
+        arrow.textContent = open ? '▾' : '▸';
+      });
       if (siteUrl){
+        var fa = field('Indirizzo');
         var a = document.createElement('a');
         a.href = siteUrl; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.className = 'site-link';
         a.textContent = String(e.site);
-        h.appendChild(a);
-      } else {
-        h.textContent = e.site || '—';
+        fa.appendChild(a); card.appendChild(fa);
       }
-      card.appendChild(h);
 
       if (e.user){
         var fu = field('Utente');
@@ -201,6 +221,10 @@
         var n = document.createElement('div'); n.className = 'n'; n.textContent = e.notes;
         fn.appendChild(n); card.appendChild(fn);
       }
+      // tutto quello che segue il titolo va nel corpo apribile
+      var body = document.createElement('div'); body.className = 'card-body';
+      while (h.nextSibling) body.appendChild(h.nextSibling);
+      card.appendChild(body);
       list.appendChild(card);
     });
   }
@@ -296,6 +320,7 @@
 
   $('btnLock').addEventListener('click', function(){
     entries = null;
+    openKeys = {};
     pendingFile = null;
     $('list').textContent = '';
     $('count').textContent = '';
