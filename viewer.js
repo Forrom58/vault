@@ -86,7 +86,12 @@
     t = t.toLowerCase();
     return String(e.site||'').toLowerCase().indexOf(t) !== -1
         || String(e.user||'').toLowerCase().indexOf(t) !== -1
-        || String(e.notes||'').toLowerCase().indexOf(t) !== -1;
+        || String(e.notes||'').toLowerCase().indexOf(t) !== -1
+        // campi aggiuntivi: nomi e valori NON segreti
+        || (Array.isArray(e.fields) && e.fields.some(function(f){
+             return String(f.name||'').toLowerCase().indexOf(t) !== -1
+                 || (!f.secret && String(f.value||'').toLowerCase().indexOf(t) !== -1);
+           }));
   }
 
   // Se "Sito / servizio" è un indirizzo web (con o senza schema) restituisce l'URL
@@ -159,6 +164,37 @@
       bp.appendChild(eye);
       bp.appendChild(copyBtn(function(){ return e.pass || ''; }, 'copia password di ' + nm));
       vp.appendChild(tp); vp.appendChild(bp); fp.appendChild(vp); card.appendChild(fp);
+
+      // Campi aggiuntivi (PIN, codici...): i segreti nascosti con "mostra" e "copia"
+      (Array.isArray(e.fields) ? e.fields : []).forEach(function(f){
+        var fname = f.name || 'Campo';
+        var ff = field(fname);
+        var vf = document.createElement('div'); vf.className = 'v';
+        var tf = document.createElement('span');
+        var bf = document.createElement('div'); bf.className = 'b';
+        if (f.secret){
+          tf.className = 't mask'; tf.textContent = '••••••••••';
+          tf.setAttribute('aria-hidden', 'true');
+          var vis = false;
+          var eyeF = mkBtn('mostra', function(){
+            vis = !vis;
+            tf.textContent = vis ? (f.value || 'vuoto') : '••••••••••';
+            tf.className = vis ? 't' : 't mask';
+            tf.setAttribute('aria-hidden', vis ? 'false' : 'true');
+            eyeF.textContent = vis ? 'nascondi' : 'mostra';
+            eyeF.setAttribute('aria-label', (vis ? 'nascondi ' : 'mostra ') + fname + ' di ' + nm);
+            eyeF.setAttribute('aria-pressed', vis ? 'true' : 'false');
+            if (vis) announce(f.value || 'vuoto');
+          });
+          eyeF.setAttribute('aria-label', 'mostra ' + fname + ' di ' + nm);
+          eyeF.setAttribute('aria-pressed', 'false');
+          bf.appendChild(eyeF);
+        } else {
+          tf.className = 't'; tf.textContent = f.value || '—';
+        }
+        if (f.value) bf.appendChild(copyBtn(function(){ return f.value; }, 'copia ' + fname + ' di ' + nm));
+        vf.appendChild(tf); vf.appendChild(bf); ff.appendChild(vf); card.appendChild(ff);
+      });
 
       if (e.notes){
         var fn = field('Note');

@@ -479,7 +479,10 @@
     const t = term.toLowerCase();
     return (entry.site||'').toLowerCase().includes(t)
         || (entry.user||'').toLowerCase().includes(t)
-        || (entry.notes||'').toLowerCase().includes(t);
+        || (entry.notes||'').toLowerCase().includes(t)
+        // campi aggiuntivi: si cercano i nomi e i valori NON segreti
+        || (entry.fields||[]).some(f => (f.name||'').toLowerCase().includes(t)
+                                     || (!f.secret && (f.value||'').toLowerCase().includes(t)));
   }
 
   // Se il campo "Sito / servizio" è un indirizzo web (con o senza schema),
@@ -577,6 +580,45 @@
       tdPass.appendChild(pwCell);
       tr.appendChild(tdPass);
 
+      // Campi aggiuntivi: uno per riga, i segreti nascosti con "mostra" e "copia"
+      (entry.fields || []).forEach(f => {
+        const fname = f.name || 'Campo';
+        const td = document.createElement('td');
+        td.dataset.label = fname;
+        const cell = document.createElement('div');
+        cell.className = 'pw-cell';
+        const span = document.createElement('span');
+        if (f.secret){
+          span.className = 'pw-mask';
+          span.textContent = '••••••••••';
+          span.setAttribute('aria-hidden', 'true');
+          const tb = document.createElement('button');
+          tb.className = 'small ghost';
+          tb.textContent = 'mostra';
+          tb.setAttribute('aria-label', 'mostra ' + fname + ' di ' + nm);
+          tb.setAttribute('aria-pressed', 'false');
+          let vis = false;
+          tb.addEventListener('click', () => {
+            vis = !vis;
+            span.textContent = vis ? (f.value || 'vuoto') : '••••••••••';
+            span.className = vis ? '' : 'pw-mask';
+            span.setAttribute('aria-hidden', vis ? 'false' : 'true');
+            tb.textContent = vis ? 'nascondi' : 'mostra';
+            tb.setAttribute('aria-label', (vis ? 'nascondi ' : 'mostra ') + fname + ' di ' + nm);
+            tb.setAttribute('aria-pressed', vis ? 'true' : 'false');
+            if (vis) announce(f.value || 'vuoto');
+          });
+          cell.appendChild(span);
+          cell.appendChild(tb);
+        } else {
+          span.textContent = f.value || '—';
+          cell.appendChild(span);
+        }
+        if (f.value) cell.appendChild(makeCopyButton(() => f.value, 'copia ' + fname + ' di ' + nm));
+        td.appendChild(cell);
+        tr.appendChild(td);
+      });
+
       const tdNotes = document.createElement('td');
       tdNotes.dataset.label = 'Note';
       tdNotes.className = 'notes-cell';
@@ -659,6 +701,7 @@
     $('entryUser').value = entry ? entry.user : '';
     $('entryPass').value = entry ? entry.pass : '';
     $('entryNotes').value = entry ? entry.notes : '';
+    renderFieldRows(entry && entry.fields ? entry.fields : []);
     $('genOptions').classList.add('hidden');
     openModal(entryModalBg, $('entrySite'));
   }
@@ -695,12 +738,90 @@
     $(id).addEventListener('input', regenInModal);
   });
 
+  // ---------- campi aggiuntivi nella finestra della voce ----------
+  const xfList = $('xfList');
+  function renumberFieldRows(){
+    const rows = xfList.querySelectorAll('.xf-row');
+    rows.forEach((row, i) => {
+      const n = i + 1;
+      row.querySelector('.xf-name').setAttribute('aria-label', 'Nome campo ' + n);
+      row.querySelector('.xf-value').setAttribute('aria-label', 'Valore campo ' + n);
+      row.querySelector('.xf-del').setAttribute('aria-label', 'elimina campo ' + n);
+    });
+    let empty = xfList.querySelector('.xf-empty');
+    if (!rows.length && !empty){
+      empty = document.createElement('div');
+      empty.className = 'xf-empty';
+      empty.textContent = 'Nessun campo aggiuntivo (es. PIN, codice cliente).';
+      xfList.appendChild(empty);
+    } else if (rows.length && empty){
+      empty.remove();
+    }
+  }
+  function addFieldRow(f){
+    const row = document.createElement('div');
+    row.className = 'xf-row';
+    const name = document.createElement('input');
+    name.type = 'text'; name.className = 'xf-name'; name.autocomplete = 'off';
+    name.placeholder = 'Nome (es. PIN)';
+    name.value = f ? (f.name || '') : '';
+    const value = document.createElement('input');
+    value.type = 'text'; value.className = 'xf-value'; value.autocomplete = 'off';
+    value.placeholder = 'Valore';
+    value.value = f ? (f.value || '') : '';
+    const opts = document.createElement('div');
+    opts.className = 'xf-opts';
+    const lab = document.createElement('label');
+    const chk = document.createElement('input');
+    chk.type = 'checkbox'; chk.className = 'xf-secret';
+    chk.checked = f ? !!f.secret : true; // nuovo campo: segreto per prudenza
+    lab.appendChild(chk);
+    lab.appendChild(document.createTextNode(' segreto'));
+    const del = document.createElement('button');
+    del.type = 'button'; del.className = 'small danger xf-del'; del.textContent = 'elimina';
+    del.addEventListener('click', () => {
+      row.remove();
+      renumberFieldRows();
+      $('btnAddField').focus();
+      announce('Campo eliminato');
+    });
+    opts.appendChild(lab);
+    opts.appendChild(del);
+    row.appendChild(name);
+    row.appendChild(value);
+    row.appendChild(opts);
+    xfList.appendChild(row);
+    renumberFieldRows();
+    return row;
+  }
+  function renderFieldRows(fields){
+    xfList.innerHTML = '';
+    fields.forEach(f => addFieldRow(f));
+    renumberFieldRows();
+  }
+  function collectFieldRows(){
+    const out = [];
+    xfList.querySelectorAll('.xf-row').forEach(row => {
+      const name = row.querySelector('.xf-name').value.trim();
+      const value = row.querySelector('.xf-value').value;
+      if (!name && !value) return; // riga vuota: ignorata
+      out.push({ name: name || 'Campo', value: value, secret: row.querySelector('.xf-secret').checked });
+    });
+    return out;
+  }
+  $('btnAddField').addEventListener('click', () => {
+    const row = addFieldRow(null);
+    row.querySelector('.xf-name').focus({ preventScroll: true });
+    row.scrollIntoView({ block: 'nearest' });
+  });
+
   $('btnSaveEntry').addEventListener('click', () => {
     const id = $('entryId').value;
     const site = $('entrySite').value.trim();
     const user = $('entryUser').value.trim();
     const pass = $('entryPass').value;
     const notes = $('entryNotes').value.trim();
+    const fields = collectFieldRows();
     if (!site){
       alert('Il campo "sito / servizio" è obbligatorio.');
       $('entrySite').focus();
@@ -708,12 +829,14 @@
     }
     if (id){
       const e = vault.entries.find(x => x.id === id);
-      if (e){ e.site = site; e.user = user; e.pass = pass; e.notes = notes; }
+      if (e){
+        e.site = site; e.user = user; e.pass = pass; e.notes = notes;
+        if (fields.length) e.fields = fields; else delete e.fields;
+      }
     } else {
-      vault.entries.push({
-        id: newEntryId(),
-        site, user, pass, notes
-      });
+      const ne = { id: newEntryId(), site, user, pass, notes };
+      if (fields.length) ne.fields = fields;
+      vault.entries.push(ne);
     }
     closeModal(entryModalBg);
     setDirty(true);
@@ -823,6 +946,11 @@
       lines.push('Sito/servizio: ' + (e.site || ''));
       lines.push('Utente:        ' + (e.user || ''));
       lines.push('Password:      ' + (e.pass || ''));
+      // Campi aggiuntivi: riga del nome (il prefisso dice se è segreto) + riga del valore.
+      (e.fields || []).forEach(f => {
+        lines.push((f.secret ? 'Campo segreto: ' : 'Campo:         ') + (f.name || ''));
+        lines.push('Valore campo:  ' + (f.value || ''));
+      });
       // Le righe di nota successive alla prima sono rientrate di 15 colonne (larghezza di
       // "Note:          "): nessuna riga di nota può essere scambiata per un separatore
       // o per un campo all'importazione.
@@ -855,6 +983,7 @@
         cur.site = cur.site.trim();
         cur.user = cur.user.trim();
         cur.notes = cur.notes.trim();
+        cur.fields = cur.fields.filter(f => f.name || f.value).map(f => ({ name: f.name || 'Campo', value: f.value, secret: f.secret }));
         if (cur.site) entries.push(cur); else invalid++;
       }
       cur = null;
@@ -863,11 +992,14 @@
     for (let i=1;i<lines.length;i++){
       const l = lines[i];
       if (l.replace(/\s+$/, '') === TXT_SEPARATOR){ close(); continue; }
-      if (/^Voce \d+\s*$/.test(l)){ close(); cur = {site:'', user:'', pass:'', notes:''}; continue; }
+      if (/^Voce \d+\s*$/.test(l)){ close(); cur = {site:'', user:'', pass:'', notes:'', fields:[]}; continue; }
       if (!cur) continue;
       if (l.startsWith('Sito/servizio:')){ cur.site = val(l); inNotes = false; }
       else if (l.startsWith('Utente:')){ cur.user = val(l); inNotes = false; }
       else if (l.startsWith('Password:')){ cur.pass = val(l); inNotes = false; }
+      else if (l.startsWith('Campo segreto:')){ cur.fields.push({ name: val(l).trim(), value: '', secret: true }); inNotes = false; }
+      else if (l.startsWith('Campo:')){ cur.fields.push({ name: val(l).trim(), value: '', secret: false }); inNotes = false; }
+      else if (l.startsWith('Valore campo:')){ if (cur.fields.length) cur.fields[cur.fields.length-1].value = val(l); inNotes = false; }
       else if (l.startsWith('Note:')){ cur.notes = val(l); inNotes = true; }
       else if (inNotes){ cur.notes += '\n' + val(l); }
     }
@@ -895,14 +1027,16 @@
       showMsg(vaultMsg, 'File non riconosciuto: deve essere un TXT prodotto da "Esporta vault (TXT, in chiaro)".', 'err');
       return;
     }
-    const keyOf = x => JSON.stringify([x.site, x.user, x.pass, x.notes]);
+    const keyOf = x => JSON.stringify([x.site, x.user, x.pass, x.notes, x.fields || []]);
     const existing = new Set(vault.entries.map(keyOf));
     let added = 0, duplicates = 0;
     parsed.entries.forEach(en => {
       const k = keyOf(en);
       if (existing.has(k)){ duplicates++; return; }
       existing.add(k);
-      vault.entries.push({ id: newEntryId(), site: en.site, user: en.user, pass: en.pass, notes: en.notes });
+      const ne = { id: newEntryId(), site: en.site, user: en.user, pass: en.pass, notes: en.notes };
+      if (en.fields.length) ne.fields = en.fields;
+      vault.entries.push(ne);
       added++;
     });
     if (added) setDirty(true);
