@@ -94,6 +94,7 @@
   </div>
 
   <div class="panel hidden" id="pwPanel">
+    <button type="button" class="big hidden" id="btnBio" style="margin-bottom:16px;">Sblocca con impronta</button>
     <label class="lbl" for="pw">Master password</label>
     <div class="pwrow">
       <input type="password" id="pw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
@@ -113,11 +114,14 @@
     </div>
     <div class="count" id="count" tabindex="-1" aria-live="polite"></div>
     <div id="list"></div>
+    <div class="actions"><button type="button" class="sm hidden" id="btnBioToggle">Attiva sblocco con impronta</button></div>
+    <div class="msg" role="status" aria-live="polite" id="bioMsg"></div>
   </div>
 </div>
 <div id="srLive" class="sr-only" aria-live="polite"></div>
 
 <script src="vault-crypto.js"></script>
+<script src="biometric.js"></script>
 <script src="viewer.js"></script>
 <script src="sw-register.js"></script>
 </body>

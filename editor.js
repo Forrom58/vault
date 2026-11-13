@@ -393,6 +393,7 @@
     setupPanel.classList.add('hidden');
     vaultPanel.classList.remove('hidden');
     setDirty(true);
+    updateBioToggle();
     renderEntries();
     updateCapacityGauge();
     $('vaultTitle').focus();
@@ -410,7 +411,10 @@
     $('importPw').value = '';
     hidePw($('importPw'));
     clearMsg($('pwPromptMsg'));
-    openModal($('pwPromptBg'), $('importPw'));
+    // Se l'impronta è attiva, il pulsante "Sblocca con impronta" è il primo proposto
+    const bio = window.VaultBio && VaultBio.isEnabled();
+    $('btnBioPwPrompt').classList.toggle('hidden', !bio);
+    openModal($('pwPromptBg'), bio ? $('btnBioPwPrompt') : $('importPw'));
   });
 
   let unlocking = false;
@@ -418,6 +422,7 @@
     unlocking = v;
     $('btnConfirmPwPrompt').disabled = v;
     $('btnCancelPwPrompt').disabled = v;
+    $('btnBioPwPrompt').disabled = v;
   }
 
   $('btnCancelPwPrompt').addEventListener('click', () => {
@@ -427,10 +432,18 @@
     pendingImportFile = null;
   });
 
-  $('btnConfirmPwPrompt').addEventListener('click', async () => {
+  $('btnConfirmPwPrompt').addEventListener('click', () => unlockImport($('importPw').value));
+  $('btnBioPwPrompt').addEventListener('click', async () => {
+    if (unlocking || !pendingImportFile) return;
+    let pw;
+    try{ pw = await VaultBio.getPassword(); }
+    catch(err){ showMsg($('pwPromptMsg'), VaultBio.messageFor(err), 'err'); return; }
+    unlockImport(pw);
+  });
+
+  async function unlockImport(pw){
     if (unlocking) return;
     const pwMsg = $('pwPromptMsg');
-    const pw = $('importPw').value;
     if (!pendingImportFile){ return; }
     setUnlocking(true);
     showMsg(pwMsg, 'Sblocco in corso, attendere…', 'warn');
@@ -458,6 +471,7 @@
       vaultPanel.classList.remove('hidden');
       setDirty(false);
       setStatus(true, 'sbloccato — vault caricato');
+      updateBioToggle();
       renderEntries();
       updateCapacityGauge();
       pendingImportFile = null;
@@ -466,6 +480,34 @@
       setUnlocking(false);
       showMsg(pwMsg, 'Password errata, oppure il file non è un vault valido creato da questa app.', 'err');
       $('importPw').focus();
+    }
+  }
+
+  // ---------- sblocco con impronta: attiva / disattiva ----------
+  function updateBioToggle(){
+    const b = $('btnBioToggle');
+    if (!window.VaultBio || !VaultBio.isSupported()){ b.classList.add('hidden'); return; }
+    b.classList.remove('hidden');
+    b.textContent = VaultBio.isEnabled() ? 'Disattiva sblocco con impronta' : 'Attiva sblocco con impronta';
+  }
+  $('btnBioToggle').addEventListener('click', async () => {
+    clearMsg(vaultMsg);
+    if (VaultBio.isEnabled()){
+      VaultBio.disable();
+      updateBioToggle();
+      showMsg(vaultMsg, 'Sblocco con impronta disattivato su questo telefono. La passkey "Vault" resta nel gestore password: se vuoi, eliminala da lì.', 'ok');
+      return;
+    }
+    if (!masterPassword) return;
+    $('btnBioToggle').disabled = true;
+    try{
+      await VaultBio.enable(masterPassword);
+      showMsg(vaultMsg, 'Sblocco con impronta attivato su questo telefono. La master password resta valida e indispensabile sugli altri dispositivi: non dimenticarla.', 'ok');
+    }catch(err){
+      showMsg(vaultMsg, VaultBio.messageFor(err), 'err');
+    }finally{
+      $('btnBioToggle').disabled = false;
+      updateBioToggle();
     }
   });
 

@@ -218,6 +218,7 @@
         <input type="file" id="fileImportTxt" accept=".txt,text/plain" class="hidden">
         <button class="small" id="btnImportSic">Importa da SafeInCloud (.db)</button>
         <input type="file" id="fileImportSic" class="hidden">
+        <button class="small hidden" id="btnBioToggle">Attiva sblocco con impronta</button>
         <button class="small danger" id="btnLock">Blocca</button>
       </div>
     </div>
@@ -309,6 +310,7 @@
 <div class="modal-bg" id="pwPromptBg">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pwPromptTitle">
     <h3 id="pwPromptTitle">Sblocca vault</h3>
+    <button class="hidden" id="btnBioPwPrompt" style="width:100%;margin-bottom:12px;">Sblocca con impronta</button>
     <div class="row">
       <div class="col"><label for="importPw">Master password</label><input type="password" id="importPw" placeholder="Master password del vault" autocomplete="off"></div>
     </div>
@@ -337,6 +339,7 @@
 
 <script src="vault-crypto.js"></script>
 <script src="safeincloud.js"></script>
+<script src="biometric.js"></script>
 <script src="editor.js"></script>
 <script src="sw-register.js"></script>
 </body>

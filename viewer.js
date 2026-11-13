@@ -254,7 +254,10 @@
     resetPwPanel();
     $('startPanel').classList.add('hidden');
     $('pwPanel').classList.remove('hidden');
-    $('pw').focus();
+    // Se l'impronta è attiva, "Sblocca con impronta" è il primo pulsante proposto
+    var bio = window.VaultBio && VaultBio.isEnabled();
+    $('btnBio').classList.toggle('hidden', !bio);
+    (bio ? $('btnBio') : $('pw')).focus();
   });
 
   $('btnEye').addEventListener('click', function(){
@@ -277,13 +280,14 @@
   $('pw').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); unlock(); } });
   $('btnUnlock').addEventListener('click', unlock);
 
-  async function unlock(){
+  var lastPw = null; // master password in memoria finché il vault è aperto (serve per attivare l'impronta)
+  async function unlock(pwOverride){
     if (busy || !pendingFile) return;
     var pwMsg = $('pwMsg');
     clearMsg(pwMsg);
-    var pw = $('pw').value;
+    var pw = (typeof pwOverride === 'string') ? pwOverride : $('pw').value;
     busy = true;
-    $('btnUnlock').disabled = true; $('btnCancel').disabled = true;
+    $('btnUnlock').disabled = true; $('btnCancel').disabled = true; $('btnBio').disabled = true;
     showMsg(pwMsg, 'Sblocco in corso…', 'ok');
 
     var imageData;
@@ -291,19 +295,22 @@
       imageData = await readImageData(pendingFile);
     }catch(err){
       showMsg(pwMsg, 'Errore nella lettura del file immagine: ' + err.message, 'err');
-      busy = false; $('btnUnlock').disabled = false; $('btnCancel').disabled = false;
+      busy = false; $('btnUnlock').disabled = false; $('btnCancel').disabled = false; $('btnBio').disabled = false;
       return;
     }
 
     try{
       var obj = await window.VaultCrypto.openVault(imageData, pw);
       entries = obj.entries;
+      lastPw = pw;
       pendingFile = null;
       resetPwPanel();
       $('pwPanel').classList.add('hidden');
       $('vaultPanel').classList.remove('hidden');
       $('q').value = '';
       setPill(true, 'sbloccato');
+      clearMsg($('bioMsg'));
+      updateBioToggle();
       render();
       $('count').focus();
     }catch(err){
@@ -312,15 +319,53 @@
       setTimeout(function(){ $('pw').focus(); }, 0);
     }finally{
       imageData = null;
-      busy = false; $('btnUnlock').disabled = false; $('btnCancel').disabled = false;
+      busy = false; $('btnUnlock').disabled = false; $('btnCancel').disabled = false; $('btnBio').disabled = false;
     }
   }
+
+  $('btnBio').addEventListener('click', async function(){
+    if (busy || !pendingFile) return;
+    var pw;
+    try{ pw = await VaultBio.getPassword(); }
+    catch(err){ showMsg($('pwMsg'), VaultBio.messageFor(err), 'err'); return; }
+    unlock(pw);
+  });
+
+  function updateBioToggle(){
+    var b = $('btnBioToggle');
+    if (!window.VaultBio || !VaultBio.isSupported()){ b.classList.add('hidden'); return; }
+    b.classList.remove('hidden');
+    b.textContent = VaultBio.isEnabled() ? 'Disattiva sblocco con impronta' : 'Attiva sblocco con impronta';
+  }
+  $('btnBioToggle').addEventListener('click', async function(){
+    var m = $('bioMsg');
+    clearMsg(m);
+    if (VaultBio.isEnabled()){
+      VaultBio.disable();
+      updateBioToggle();
+      showMsg(m, 'Sblocco con impronta disattivato su questo telefono. La passkey "Vault" resta nel gestore password: se vuoi, eliminala da lì.', 'ok');
+      return;
+    }
+    if (!lastPw) return;
+    $('btnBioToggle').disabled = true;
+    try{
+      await VaultBio.enable(lastPw);
+      showMsg(m, 'Sblocco con impronta attivato su questo telefono. La master password resta valida e indispensabile sugli altri dispositivi: non dimenticarla.', 'ok');
+    }catch(err){
+      showMsg(m, VaultBio.messageFor(err), 'err');
+    }finally{
+      $('btnBioToggle').disabled = false;
+      updateBioToggle();
+    }
+  });
 
   $('q').addEventListener('input', function(){ if (entries) render(); });
 
   $('btnLock').addEventListener('click', function(){
     entries = null;
+    lastPw = null;
     openKeys = {};
+    clearMsg($('bioMsg'));
     pendingFile = null;
     $('list').textContent = '';
     $('count').textContent = '';
