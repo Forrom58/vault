@@ -256,6 +256,8 @@
     $('pwPanel').classList.remove('hidden');
     // Impronta attiva: si propone subito l'impronta, la password solo su richiesta
     var bio = window.VaultBio && VaultBio.isEnabled();
+    $('bioChkWrap').classList.toggle('hidden', !(window.VaultBio && VaultBio.isSupported()));
+    $('bioChk').checked = !!bio;
     setBioMode(bio);
     if (bio) startBio(true); else $('pw').focus();
   });
@@ -265,6 +267,8 @@
     $('pwArea').classList.toggle('hidden', on);
     $('btnUnlock').classList.toggle('hidden', on);
     $('pwPanel').classList.toggle('bio-mode', on);
+    var w = $('bioChkWrap');
+    if (on) $('pwPanel').querySelector('.actions').after(w); else $('pwArea').appendChild(w);
   }
   $('btnUsePw').addEventListener('click', function(){
     clearMsg($('pwMsg'));
@@ -292,7 +296,6 @@
   $('pw').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); unlock(); } });
   $('btnUnlock').addEventListener('click', unlock);
 
-  var lastPw = null; // master password in memoria finché il vault è aperto (serve per attivare l'impronta)
   async function unlock(pwOverride){
     if (busy || !pendingFile) return;
     var pwMsg = $('pwMsg');
@@ -314,7 +317,6 @@
     try{
       var obj = await window.VaultCrypto.openVault(imageData, pw);
       entries = obj.entries;
-      lastPw = pw;
       pendingFile = null;
       resetPwPanel();
       $('pwPanel').classList.add('hidden');
@@ -324,9 +326,16 @@
       $('btnLock').classList.remove('hidden');
       document.documentElement.classList.add('unlocked');
       clearMsg($('bioMsg'));
-      updateBioToggle();
       render();
       $('count').focus();
+      // Casella spuntata e impronta non ancora attiva: si attiva ora (il telefono chiede l'impronta)
+      if ($('bioChk').checked && window.VaultBio && VaultBio.isSupported() && !VaultBio.isEnabled()){
+        VaultBio.enable(pw).then(function(){
+          showMsg($('bioMsg'), 'Sblocco con impronta attivato. La master password resta indispensabile sugli altri dispositivi: non dimenticarla.', 'ok');
+        }, function(err){
+          showMsg($('bioMsg'), 'Impronta non attivata. ' + VaultBio.messageFor(err), 'err');
+        });
+      }
     }catch(err){
       // Un solo messaggio: password errata e file non valido sono indistinguibili (nessun oracolo).
       showMsg(pwMsg, 'Password errata, oppure il file non è un vault valido creato da questa app.', 'err');
@@ -357,31 +366,16 @@
   }
   $('btnBio').addEventListener('click', function(){ startBio(false); });
 
-  function updateBioToggle(){
-    var b = $('btnBioToggle');
-    if (!window.VaultBio || !VaultBio.isSupported()){ b.classList.add('hidden'); return; }
-    b.classList.remove('hidden');
-    b.textContent = VaultBio.isEnabled() ? 'Disattiva sblocco con impronta' : 'Attiva sblocco con impronta';
-  }
-  $('btnBioToggle').addEventListener('click', async function(){
-    var m = $('bioMsg');
-    clearMsg(m);
-    if (VaultBio.isEnabled()){
+  // Casella "Sblocco con impronta": togliendo la spunta si disattiva subito;
+  // mettendola si attiva al prossimo sblocco con la master password.
+  $('bioChk').addEventListener('change', function(){
+    if (!this.checked && VaultBio.isEnabled()){
       VaultBio.disable();
-      updateBioToggle();
-      showMsg(m, 'Sblocco con impronta disattivato su questo telefono. La passkey "Vault" resta nel gestore password: se vuoi, eliminala da lì.', 'ok');
-      return;
-    }
-    if (!lastPw) return;
-    $('btnBioToggle').disabled = true;
-    try{
-      await VaultBio.enable(lastPw);
-      showMsg(m, 'Sblocco con impronta attivato su questo telefono. La master password resta valida e indispensabile sugli altri dispositivi: non dimenticarla.', 'ok');
-    }catch(err){
-      showMsg(m, VaultBio.messageFor(err), 'err');
-    }finally{
-      $('btnBioToggle').disabled = false;
-      updateBioToggle();
+      setBioMode(false);
+      showMsg($('pwMsg'), 'Sblocco con impronta disattivato. Scrivi la master password.', 'ok');
+      $('pw').focus();
+    } else if (this.checked && !VaultBio.isEnabled()){
+      announce('Verrà attivato dopo lo sblocco con la password');
     }
   });
 
@@ -389,7 +383,6 @@
 
   $('btnLock').addEventListener('click', function(){
     entries = null;
-    lastPw = null;
     openKeys = {};
     clearMsg($('bioMsg'));
     pendingFile = null;
