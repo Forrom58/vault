@@ -75,6 +75,18 @@
   .f .t.mask{letter-spacing:3px;}
   .f .b{display:flex;gap:10px;flex-shrink:0;flex-wrap:wrap;}
   .f .n{font-size:1.05rem;color:var(--text);white-space:pre-wrap;word-break:break-word;}
+  /* "Cerca": X di cancellazione grande */
+  input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;width:30px;height:30px;margin-left:8px;cursor:pointer;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 5L19 19M19 5L5 19' stroke='%237f96ad' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;}
+  /* Da sbloccato: in alto tutto fermo, scorre solo l'elenco */
+  html.unlocked, html.unlocked body{height:100%;overflow:hidden;}
+  html.unlocked .wrap{height:100%;display:flex;flex-direction:column;}
+  html.unlocked header, html.unlocked #vaultPanel > .top{flex:0 0 auto;}
+  html.unlocked #vaultPanel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+  html.unlocked #scrollArea{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:24px;}
+  html.unlocked body{padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));}
+  .state{display:flex;align-items:center;gap:10px;}
+  button.link{border:none;background:none;min-height:44px;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:3px;width:100%;}
   .empty{color:var(--text);text-align:center;padding:30px 0;font-size:1.05rem;border:3px dashed var(--line);border-radius:8px;}
 </style>
 </head>
@@ -84,7 +96,10 @@
   <header>
     <a class="home" href="./">← Home</a>
     <h1><span>▣</span> Consulta</h1>
-    <span id="pill" class="pill" role="status" aria-live="polite">bloccato</span>
+    <div class="state">
+      <span id="pill" class="pill" role="status" aria-live="polite">bloccato</span>
+      <button type="button" class="danger sm hidden" id="btnLock">Blocca</button>
+    </div>
   </header>
 
   <div id="startPanel" style="margin-bottom:16px;">
@@ -94,11 +109,16 @@
   </div>
 
   <div class="panel hidden" id="pwPanel">
-    <button type="button" class="big hidden" id="btnBio" style="margin-bottom:16px;">Sblocca con impronta</button>
-    <label class="lbl" for="pw">Master password</label>
-    <div class="pwrow">
-      <input type="password" id="pw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
-      <button type="button" id="btnEye" aria-pressed="false">mostra</button>
+    <div id="bioArea" class="hidden">
+      <button type="button" class="primary big" id="btnBio">Sblocca con impronta</button>
+      <button type="button" class="link" id="btnUsePw" style="margin-top:10px;">Sblocca con password</button>
+    </div>
+    <div id="pwArea">
+      <label class="lbl" for="pw">Master password</label>
+      <div class="pwrow">
+        <input type="password" id="pw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
+        <button type="button" id="btnEye" aria-pressed="false">mostra</button>
+      </div>
     </div>
     <div class="actions">
       <button type="button" id="btnCancel">Annulla</button>
@@ -108,14 +128,15 @@
   </div>
 
   <div class="hidden" id="vaultPanel">
-    <div class="pwrow">
-      <input type="search" id="q" aria-label="Cerca per sito, utente o note" placeholder="Cerca per sito, utente o note" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
-      <button type="button" class="danger" id="btnLock">Blocca</button>
+    <div class="top">
+      <input type="search" id="q" aria-label="Cerca" placeholder="Cerca" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <div class="count" id="count" tabindex="-1" aria-live="polite"></div>
     </div>
-    <div class="count" id="count" tabindex="-1" aria-live="polite"></div>
-    <div id="list"></div>
-    <div class="actions"><button type="button" class="sm hidden" id="btnBioToggle">Attiva sblocco con impronta</button></div>
-    <div class="msg" role="status" aria-live="polite" id="bioMsg"></div>
+    <div id="scrollArea">
+      <div id="list"></div>
+      <div class="actions"><button type="button" class="sm hidden" id="btnBioToggle">Attiva sblocco con impronta</button></div>
+      <div class="msg" role="status" aria-live="polite" id="bioMsg"></div>
+    </div>
   </div>
 </div>
 <div id="srLive" class="sr-only" aria-live="polite"></div>

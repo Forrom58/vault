@@ -254,10 +254,21 @@
     resetPwPanel();
     $('startPanel').classList.add('hidden');
     $('pwPanel').classList.remove('hidden');
-    // Se l'impronta è attiva, "Sblocca con impronta" è il primo pulsante proposto
+    // Impronta attiva: si propone subito l'impronta, la password solo su richiesta
     var bio = window.VaultBio && VaultBio.isEnabled();
-    $('btnBio').classList.toggle('hidden', !bio);
-    (bio ? $('btnBio') : $('pw')).focus();
+    setBioMode(bio);
+    if (bio) startBio(true); else $('pw').focus();
+  });
+
+  function setBioMode(on){
+    $('bioArea').classList.toggle('hidden', !on);
+    $('pwArea').classList.toggle('hidden', on);
+    $('btnUnlock').classList.toggle('hidden', on);
+  }
+  $('btnUsePw').addEventListener('click', function(){
+    clearMsg($('pwMsg'));
+    setBioMode(false);
+    $('pw').focus();
   });
 
   $('btnEye').addEventListener('click', function(){
@@ -287,7 +298,7 @@
     clearMsg(pwMsg);
     var pw = (typeof pwOverride === 'string') ? pwOverride : $('pw').value;
     busy = true;
-    $('btnUnlock').disabled = true; $('btnCancel').disabled = true; $('btnBio').disabled = true;
+    $('btnUnlock').disabled = true; $('btnCancel').disabled = true; $('btnBio').disabled = true; $('btnUsePw').disabled = true;
     showMsg(pwMsg, 'Sblocco in corso…', 'ok');
 
     var imageData;
@@ -295,7 +306,7 @@
       imageData = await readImageData(pendingFile);
     }catch(err){
       showMsg(pwMsg, 'Errore nella lettura del file immagine: ' + err.message, 'err');
-      busy = false; $('btnUnlock').disabled = false; $('btnCancel').disabled = false; $('btnBio').disabled = false;
+      busy = false; $('btnUnlock').disabled = false; $('btnCancel').disabled = false; $('btnBio').disabled = false; $('btnUsePw').disabled = false;
       return;
     }
 
@@ -309,6 +320,8 @@
       $('vaultPanel').classList.remove('hidden');
       $('q').value = '';
       setPill(true, 'sbloccato');
+      $('btnLock').classList.remove('hidden');
+      document.documentElement.classList.add('unlocked');
       clearMsg($('bioMsg'));
       updateBioToggle();
       render();
@@ -319,17 +332,29 @@
       setTimeout(function(){ $('pw').focus(); }, 0);
     }finally{
       imageData = null;
-      busy = false; $('btnUnlock').disabled = false; $('btnCancel').disabled = false; $('btnBio').disabled = false;
+      busy = false; $('btnUnlock').disabled = false; $('btnCancel').disabled = false; $('btnBio').disabled = false; $('btnUsePw').disabled = false;
     }
   }
 
-  $('btnBio').addEventListener('click', async function(){
-    if (busy || !pendingFile) return;
+  // auto = richiesta automatica appena scelto il file: se viene annullata non si mostra un errore,
+  // si lascia il pulsante "Sblocca con impronta" pronto da toccare.
+  var bioBusy = false;
+  async function startBio(auto){
+    if (busy || bioBusy || !pendingFile) return;
+    bioBusy = true;
     var pw;
     try{ pw = await VaultBio.getPassword(); }
-    catch(err){ showMsg($('pwMsg'), VaultBio.messageFor(err), 'err'); return; }
+    catch(err){
+      bioBusy = false;
+      if (auto && err.message === 'ANNULLATO'){ $('btnBio').focus(); return; }
+      showMsg($('pwMsg'), VaultBio.messageFor(err), 'err');
+      $('btnBio').focus();
+      return;
+    }
+    bioBusy = false;
     unlock(pw);
-  });
+  }
+  $('btnBio').addEventListener('click', function(){ startBio(false); });
 
   function updateBioToggle(){
     var b = $('btnBioToggle');
@@ -374,6 +399,8 @@
     $('startPanel').classList.remove('hidden');
     clearMsg($('startMsg'));
     setPill(false, 'bloccato');
+    $('btnLock').classList.add('hidden');
+    document.documentElement.classList.remove('unlocked');
     $('btnLoad').focus();
   });
 })();
