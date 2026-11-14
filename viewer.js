@@ -264,6 +264,7 @@
     $('bioArea').classList.toggle('hidden', !on);
     $('pwArea').classList.toggle('hidden', on);
     $('btnUnlock').classList.toggle('hidden', on);
+    $('pwPanel').classList.toggle('bio-mode', on);
   }
   $('btnUsePw').addEventListener('click', function(){
     clearMsg($('pwMsg'));

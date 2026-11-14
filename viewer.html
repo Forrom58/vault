@@ -86,6 +86,9 @@
   html.unlocked #scrollArea{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:24px;}
   html.unlocked body{padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));}
   .state{display:flex;align-items:center;gap:10px;}
+  /* Modalità impronta: tre tasti identici, uno sotto l'altro, testo su una riga */
+  button.tri, #pwPanel.bio-mode #btnCancel{display:block;width:100%;min-height:48px;margin:0 0 12px;padding:0 10px;font-size:.9rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #pwPanel.bio-mode .actions{margin-top:0;}
   button.link{border:none;background:none;min-height:44px;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:3px;width:100%;}
   .empty{color:var(--text);text-align:center;padding:30px 0;font-size:1.05rem;border:3px dashed var(--line);border-radius:8px;}
 </style>
@@ -110,8 +113,8 @@
 
   <div class="panel hidden" id="pwPanel">
     <div id="bioArea" class="hidden">
-      <button type="button" class="primary big" id="btnBio">Sblocca con impronta</button>
-      <button type="button" class="link" id="btnUsePw" style="margin-top:10px;">Sblocca con password</button>
+      <button type="button" class="tri" id="btnBio">Sblocca con impronta</button>
+      <button type="button" class="tri" id="btnUsePw">Sblocca con password</button>
     </div>
     <div id="pwArea">
       <label class="lbl" for="pw">Master password</label>
